@@ -75,11 +75,13 @@ export function getRevealWindow(params: OscParams, viewportWidth: number): Revea
   let halfWidth = slotHalfW
   let borderScale = 1
 
+  const floor = clamp01(params.squeezeFloor ?? 0)
+
    if (params.mode === 'reveal-in') {
      if (params.centered) {
        const split = easeInOutCubic(clamp01(params.progress))
        travelCenterX = centerX
-       halfWidth = slotHalfW * split
+       halfWidth = slotHalfW * (floor + (1 - floor) * split)
        borderScale = 1
      } else {
       const travel = easeOutQuart(clamp01(params.progress / 0.80))
@@ -92,7 +94,7 @@ export function getRevealWindow(params: OscParams, viewportWidth: number): Revea
      if (params.centered) {
        const split = 1 - easeInOutCubic(clamp01(params.progress))
        travelCenterX = centerX
-       halfWidth = slotHalfW * split
+       halfWidth = slotHalfW * (floor + (1 - floor) * split)
        borderScale = 1
      } else {
       const travel = easeInOutQuart(clamp01(params.progress / 0.85))

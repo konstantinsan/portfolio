@@ -20,7 +20,8 @@ const linear = (x: number) => x
 
 const TRANSITION_MS = REVEAL_DURATION * 1000
 const POST_TRANSITION_MS = 396
-const VIDEO_SQUEEZE_MS = 700
+const VIDEO_SQUEEZE_MS = 300
+const VIDEO_SQUEEZE_FLOOR = 0.8
 
 function isLandingKey(i: number) {
   return FLOW[i]?.key === 'landing'
@@ -115,15 +116,58 @@ function App() {
 
     const p = controller.paramsRef.current
     const videoTransition = !isLandingKey(index) && !isLandingKey(target)
-    const halfDur = videoTransition ? VIDEO_SQUEEZE_MS / 2 : POST_TRANSITION_MS / 2
 
+    if (videoTransition) {
+      // Shallow centered squeeze; swap slide immediately so AnimatePresence
+      // fades old → new in parallel with the border motion.
+      const halfDur = VIDEO_SQUEEZE_MS / 2
+      p.squeezeFloor = VIDEO_SQUEEZE_FLOOR
+      p.direction = dir === 1 ? 'left' : 'right'
+      p.centered = true
+      p.mode = 'reveal-out'
+      p.progress = 0
+      const outStart = performance.now()
+
+      const tickIn = () => {
+        const rawIn = Math.min(1, (performance.now() - outStart - halfDur) / halfDur)
+        p.progress = rawIn
+        if (rawIn < 1) {
+          rafRef.current = requestAnimationFrame(tickIn)
+          return
+        }
+        p.mode = 'idle'
+        p.progress = 1
+        p.squeezeFloor = 0
+        setIsTransitioning(false)
+      }
+
+      const tickOut = () => {
+        const raw = Math.min(1, (performance.now() - outStart) / halfDur)
+        p.progress = raw
+        if (raw < 1) {
+          rafRef.current = requestAnimationFrame(tickOut)
+          return
+        }
+        p.mode = 'reveal-in'
+        p.progress = 0
+        p.direction = dir === 1 ? 'right' : 'left'
+        rafRef.current = requestAnimationFrame(tickIn)
+      }
+
+      setIndex(target)
+      rafRef.current = requestAnimationFrame(tickOut)
+      return
+    }
+
+    p.squeezeFloor = 0
     p.direction = dir === 1 ? 'left' : 'right'
     p.mode = 'reveal-out'
     p.progress = 0
     p.centered = true
+    const outDur = POST_TRANSITION_MS / 2
 
     const tickOut = () => {
-      const raw = Math.min(1, (performance.now() - transitionStartRef.current) / halfDur)
+      const raw = Math.min(1, (performance.now() - transitionStartRef.current) / outDur)
       p.progress = raw
       if (raw < 1) {
         rafRef.current = requestAnimationFrame(tickOut)
@@ -134,7 +178,7 @@ function App() {
       setIndex(target)
       p.direction = dir === 1 ? 'right' : 'left'
       p.centered = true
-      startRevealIn(slotVersionBeforeSwitch, halfDur)
+      startRevealIn(slotVersionBeforeSwitch, POST_TRANSITION_MS / 2)
     }
 
     rafRef.current = requestAnimationFrame(tickOut)
@@ -264,12 +308,12 @@ function App() {
             variants={{
               enter: { opacity: 0 },
               center: { opacity: 1 },
-              exit: { opacity: 0, transition: { duration: 0.35, ease: 'easeInOut' } },
+              exit: { opacity: 0, transition: { duration: 0.12, ease: 'easeIn' } },
             }}
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.35, ease: 'easeInOut' }}
+            transition={{ duration: 0.2, delay: 0.05, ease: 'easeOut' }}
             style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 3rem 8rem' }}
           >
             {current === 'landing' && <Landing />}
