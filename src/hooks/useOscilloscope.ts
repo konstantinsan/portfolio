@@ -11,6 +11,7 @@ export interface OscParams {
   colorTrace: string
   colorGlow: string
   centered?: boolean
+  squeezeFloor?: number
 }
 
 export interface OscController {
