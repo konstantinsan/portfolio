@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(find \"C:\\\\UI UX Projects\\\\Portfolio Redesign new\\\\Iteration 2 - 22.04.26/src\" -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) -exec sh -c 'wc -l \"$1\" | awk \"{if\\(\\\\$1 < 10\\) print \\\\\"$1: \\\\\" \\\\$1 \\\\\" lines\\\\\"}\"' _ {} \\\\;)",
+      "Bash(find \"C:\\\\UI UX Projects\\\\Portfolio Redesign new\\\\Iteration 2 - 22.04.26/src/components\" -type f -name \"*.tsx\" -exec wc -l {} +)"
+    ]
+  }
+}
