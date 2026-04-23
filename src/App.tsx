@@ -22,11 +22,19 @@ const linear = (x: number) => x
 const TRANSITION_MS = REVEAL_DURATION * 1000
 const POST_TRANSITION_MS = 396
 
+const FADE_DUR_MS = 260
+const FADE_CONTENT_MS = 200
+
+function isLandingDemo(a: number, b: number) {
+  return (a === 0 && b === 1) || (a === 1 && b === 0)
+}
+
 function App() {
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState<1 | -1>(1)
   const [overlay, setOverlay] = useState<OverlayKey>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [fadeMode, setFadeMode] = useState(false)
   const [scrollDir, setScrollDir] = useState<'up' | 'down' | null>(null)
   const transitionStartRef = useRef(0)
   const rafRef = useRef(0)
@@ -109,6 +117,52 @@ function App() {
     transitionStartRef.current = performance.now()
 
     const p = controller.paramsRef.current
+
+    if (!isLandingDemo(index, target)) {
+      // Fade wave borders out, swap content, fade back in.
+      setFadeMode(true)
+      p.mode = 'idle'
+      p.progress = 1
+      const start = performance.now()
+
+      const tickFadeOut = () => {
+        const raw = Math.min(1, (performance.now() - start) / FADE_DUR_MS)
+        p.canvasOpacity = 1 - raw
+        if (raw < 1) {
+          rafRef.current = requestAnimationFrame(tickFadeOut)
+          return
+        }
+        p.canvasOpacity = 0
+        const versionBefore = slotVersionRef.current
+        setIndex(target)
+
+        const waitSlot = () => {
+          const fresh = slotVersionRef.current > versionBefore
+          const hasSlot = Boolean(p.slotRect && p.slotRect.w > 0)
+          if (!(fresh && hasSlot)) {
+            rafRef.current = requestAnimationFrame(waitSlot)
+            return
+          }
+          const inStart = performance.now()
+          const tickFadeIn = () => {
+            const raw2 = Math.min(1, (performance.now() - inStart) / FADE_DUR_MS)
+            p.canvasOpacity = raw2
+            if (raw2 < 1) {
+              rafRef.current = requestAnimationFrame(tickFadeIn)
+              return
+            }
+            p.canvasOpacity = 1
+            setIsTransitioning(false)
+            setFadeMode(false)
+          }
+          rafRef.current = requestAnimationFrame(tickFadeIn)
+        }
+        rafRef.current = requestAnimationFrame(waitSlot)
+      }
+      rafRef.current = requestAnimationFrame(tickFadeOut)
+      return
+    }
+
     p.direction = dir === 1 ? 'left' : 'right'
     p.mode = 'reveal-out'
     p.progress = 0
@@ -253,8 +307,8 @@ function App() {
             custom={direction}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 1 }}
-            transition={{ duration: POST_TRANSITION_MS / 2 / 1000, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ opacity: fadeMode ? 0 : 1 }}
+            transition={{ duration: (fadeMode ? FADE_CONTENT_MS : POST_TRANSITION_MS / 2) / 1000, ease: [0.16, 1, 0.3, 1] }}
             style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
           >
             {current === 'landing' && <Landing />}

@@ -11,6 +11,7 @@ export interface OscParams {
   colorTrace: string
   colorGlow: string
   centered?: boolean
+  canvasOpacity?: number
 }
 
 export interface OscController {
@@ -88,6 +89,11 @@ export function useOscilloscope(
       const p = ctrl.paramsRef.current
 
       ctx.clearRect(0, 0, width, height)
+
+      const desiredOpacity = p.canvasOpacity ?? 1
+      if (canvas.style.opacity !== String(desiredOpacity)) {
+        canvas.style.opacity = String(desiredOpacity)
+      }
 
       if (p.mode === 'paused') {
         rafId = requestAnimationFrame(frame)
@@ -207,6 +213,7 @@ export function createOscController(): OscController {
       slotRect: null,
       colorTrace: 'rgba(255,0,56,0.95)',
       colorGlow: 'rgba(255,107,53,0.9)',
+      canvasOpacity: 1,
     } },
     scrollRef: { current: { current: 0, target: 0 } },
     mouseRef: { current: { x: 0, y: 0 } },
