@@ -15,10 +15,44 @@ export interface VideoSectionProps {
   videoUrl: string
 }
 
+function buildAutoplaySrc(url: string): string {
+  const idMatch = url.match(/\/embed\/([^/?]+)/)
+  const id = idMatch ? idMatch[1] : ''
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const params = new URLSearchParams({
+    autoplay: '1',
+    mute: '1',
+    loop: '1',
+    playlist: id,
+    controls: '0',
+    modestbranding: '1',
+    playsinline: '1',
+    enablejsapi: '1',
+    rel: '0',
+    iv_load_policy: '3',
+    ...(origin ? { origin } : {}),
+  })
+  return `${url.split('?')[0]}?${params.toString()}`
+}
+
 export default function VideoSection({ title, detail, videoUrl }: VideoSectionProps) {
   const flow = useFlow()
   const frameRef = useRef<HTMLDivElement>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [muted, setMuted] = useState(true)
+  const embedSrc = buildAutoplaySrc(videoUrl)
+
+  const toggleSound = () => {
+    const win = iframeRef.current?.contentWindow
+    if (!win) return
+    const func = muted ? 'unMute' : 'mute'
+    win.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*')
+    if (muted) {
+      win.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }), '*')
+    }
+    setMuted(!muted)
+  }
 
   useEffect(() => {
     const measure = () => {
@@ -43,12 +77,32 @@ export default function VideoSection({ title, detail, videoUrl }: VideoSectionPr
         <div ref={frameRef} className="video-frame" style={{ position: 'relative' }}>
           <div className="video-glow" />
           <iframe
-            src={videoUrl}
+            ref={iframeRef}
+            src={embedSrc}
             title={title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
+            onLoad={() => {
+              const win = iframeRef.current?.contentWindow
+              if (!win) return
+              win.postMessage(JSON.stringify({ event: 'listening' }), '*')
+              win.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*')
+              win.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*')
+            }}
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
           />
+          <button
+            type="button"
+            onClick={toggleSound}
+            aria-label={muted ? 'Unmute video' : 'Mute video'}
+            className="video-sound-btn"
+          >
+            {muted ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></svg>
+            )}
+          </button>
           <AnimatePresence>
             {panelOpen && (
               <motion.div
