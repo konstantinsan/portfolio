@@ -53,33 +53,47 @@ export default function Landing() {
           transition={{ duration: REVEAL_DURATION, ease: [0.16, 1, 0.3, 1] }}
           style={{ textAlign: 'center' }}
         >
-          <p style={{ fontSize: 'clamp(1rem, 1.6vw, 1.25rem)', color: '#d4d4d4', textAlign: 'left', marginBottom: '16px' }}>
+          <p className="font-terminal" style={{ fontSize: 'clamp(1.25rem, 2vw, 1.5rem)', color: '#d4d4d4', textAlign: 'left', marginBottom: '16px' }}>
             My name is
           </p>
           <h1 className="font-display" style={{ fontSize: 'clamp(3rem, 10vw, 8rem)', color: '#fafafa', lineHeight: 1, display: 'inline-block' }}>
             KONSTANTIN
           </h1>
-          <p style={{ marginTop: '16px', fontSize: 'clamp(1rem, 2vw, 1.4rem)', color: '#d4d4d4', textAlign: 'right' }}>
-            a freelance <span className="text-gradient" style={{ fontWeight: 600 }}>Sound Designer</span>
+          <p className="font-terminal" style={{ marginTop: '16px', fontSize: 'clamp(1.25rem, 2.4vw, 1.75rem)', color: '#d4d4d4', textAlign: 'right' }}>
+            a freelance <span className="text-gradient">Sound Designer</span>
           </p>
         </motion.div>
       </RevealBlock>
       {/* Start sits below title absolutely so title stays vertically centered on screen */}
-      <div style={{ position: 'absolute', left: '50%', top: '100%', transform: 'translate(-50%, 2.5rem)', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', left: '50%', top: '100%', transform: 'translate(-50%, 2.5rem)', display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
         <AnimatePresence>
           {showStart && (
-               <motion.button
-                 key="start"
-                 initial={{ opacity: 0, y: 20 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 exit={{ opacity: 0, y: -20 }}
-                 whileHover={{ scale: 1.05, transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] } }}
-                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                 className={`btn-outline font-display${flow.scrollDir === 'down' ? ' active' : ''}`}
-                 onClick={flow.next}
-               >
-              START
-            </motion.button>
+            <>
+              <motion.button
+                key="start-sound"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                whileHover={{ scale: 1.05, transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] } }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="btn-primary font-display"
+                onClick={() => { flow.setSoundOn(true); flow.next() }}
+              >
+                Start with Sound
+              </motion.button>
+              <motion.button
+                key="start-muted"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                whileHover={{ scale: 1.05, transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] } }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
+                className="btn-outline font-display"
+                onClick={() => { flow.setSoundOn(false); flow.next() }}
+              >
+                Start Muted
+              </motion.button>
+            </>
           )}
         </AnimatePresence>
       </div>

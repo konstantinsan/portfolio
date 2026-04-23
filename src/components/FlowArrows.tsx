@@ -4,7 +4,7 @@ import { FLOW, useFlow } from '@/state/flow'
 export default function FlowArrows() {
   const flow = useFlow()
   const currentKey = FLOW[flow.index].key
-  if (currentKey === 'landing' || currentKey.startsWith('video-') || currentKey === 'post-production' || currentKey === 'demo' || currentKey === 'integration') return null
+  if (currentKey === 'landing') return null
   const prev = flow.index > 0 ? FLOW[flow.index - 1] : null
   const next = flow.index < FLOW.length - 1 ? FLOW[flow.index + 1] : null
 

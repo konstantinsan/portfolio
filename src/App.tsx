@@ -5,7 +5,6 @@ import { createOscController, REVEAL_DURATION } from '@/hooks/useOscilloscope'
 import Oscilloscope from '@/components/Oscilloscope'
 import Nav from '@/components/Nav'
 import FlowArrows from '@/components/FlowArrows'
-import SectionPills from '@/components/SectionPills'
 import StickyContactBar from '@/components/StickyContactBar'
 import Landing from '@/components/Landing'
 import DemoReel from '@/components/DemoReel'
@@ -21,6 +20,11 @@ const linear = (x: number) => x
 
 const TRANSITION_MS = REVEAL_DURATION * 1000
 const POST_TRANSITION_MS = 396
+const VIDEO_SQUEEZE_MS = 700
+
+function isLandingKey(i: number) {
+  return FLOW[i]?.key === 'landing'
+}
 
 function App() {
   const [index, setIndex] = useState(0)
@@ -28,6 +32,7 @@ function App() {
   const [overlay, setOverlay] = useState<OverlayKey>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [scrollDir, setScrollDir] = useState<'up' | 'down' | null>(null)
+  const [soundOn, setSoundOn] = useState(false)
   const transitionStartRef = useRef(0)
   const rafRef = useRef(0)
   const slotVersionRef = useRef(0)
@@ -109,14 +114,16 @@ function App() {
     transitionStartRef.current = performance.now()
 
     const p = controller.paramsRef.current
+    const videoTransition = !isLandingKey(index) && !isLandingKey(target)
+    const halfDur = videoTransition ? VIDEO_SQUEEZE_MS / 2 : POST_TRANSITION_MS / 2
+
     p.direction = dir === 1 ? 'left' : 'right'
     p.mode = 'reveal-out'
     p.progress = 0
     p.centered = true
-    const outDur = POST_TRANSITION_MS / 2
 
     const tickOut = () => {
-      const raw = Math.min(1, (performance.now() - transitionStartRef.current) / outDur)
+      const raw = Math.min(1, (performance.now() - transitionStartRef.current) / halfDur)
       p.progress = raw
       if (raw < 1) {
         rafRef.current = requestAnimationFrame(tickOut)
@@ -127,7 +134,7 @@ function App() {
       setIndex(target)
       p.direction = dir === 1 ? 'right' : 'left'
       p.centered = true
-      startRevealIn(slotVersionBeforeSwitch, POST_TRANSITION_MS / 2)
+      startRevealIn(slotVersionBeforeSwitch, halfDur)
     }
 
     rafRef.current = requestAnimationFrame(tickOut)
@@ -235,11 +242,15 @@ function App() {
   }, [controller])
 
   const ctx = useMemo(() => ({
-    index, direction, overlay, isTransitioning, scrollDir,
+    index, direction, overlay, isTransitioning, scrollDir, soundOn, setSoundOn,
     goTo, next, prev, openOverlay, closeOverlay, setSlotRect, oscController: controller,
-  }), [index, direction, overlay, isTransitioning, scrollDir, goTo, next, prev, openOverlay, closeOverlay, setSlotRect, controller])
+  }), [index, direction, overlay, isTransitioning, scrollDir, soundOn, goTo, next, prev, openOverlay, closeOverlay, setSlotRect, controller])
 
   const current = FLOW[index].key
+
+  useEffect(() => {
+    controller.waveTargetRef.current = current === 'landing' ? 1 : 0
+  }, [current, controller])
 
   return (
     <FlowContext.Provider value={ctx}>
@@ -247,15 +258,19 @@ function App() {
       <Oscilloscope controller={controller} />
       <Nav />
       <div className="flow-section">
-        <AnimatePresence mode="wait" custom={direction}>
+        <AnimatePresence>
           <motion.div
             key={current}
-            custom={direction}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 1 }}
-            transition={{ duration: POST_TRANSITION_MS / 2 / 1000, ease: [0.16, 1, 0.3, 1] }}
-            style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+            variants={{
+              enter: { opacity: 0 },
+              center: { opacity: 1 },
+              exit: { opacity: 0, transition: { duration: 0.35, ease: 'easeInOut' } },
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.35, ease: 'easeInOut' }}
+            style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 3rem 8rem' }}
           >
             {current === 'landing' && <Landing />}
             {current === 'demo' && <DemoReel />}
@@ -268,7 +283,6 @@ function App() {
         </AnimatePresence>
       </div>
       <FlowArrows />
-      <SectionPills />
       <StickyContactBar />
       <AnimatePresence>
         {overlay === 'about' && <About key="about" />}

@@ -11,6 +11,7 @@
 @theme {
   --font-sans: 'Familjen Grotesk', system-ui, sans-serif;
   --font-display: 'Upheaval Pro', 'Familjen Grotesk', system-ui, sans-serif;
+  --font-terminal: 'VT323', 'Courier New', monospace;
 
   --color-background: #0a0a0a;
   --color-foreground: #fafafa;
@@ -52,6 +53,13 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.01em;
   line-height: 0.95;
+}
+
+/* Terminal/CRT font for retro subtitle lines */
+.font-terminal {
+  font-family: var(--font-terminal);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 /* Heading uses display font too */
@@ -103,11 +111,42 @@ body {
   -webkit-backdrop-filter: blur(20px) saturate(1.4);
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.navbar-underglow {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,0,56,0.3), rgba(255,107,53,0.2), rgba(255,0,56,0.3), transparent);
-  animation: navbar-glow 3s ease-in-out infinite;
+.nav-progress {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  display: flex; gap: 2px;
+  height: 2px;
+  pointer-events: auto;
 }
+.nav-progress-tick {
+  position: relative;
+  flex: 1;
+  height: 2px;
+  background: rgba(255,255,255,0.08);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+.nav-progress-tick:hover { background: rgba(255,255,255,0.25); }
+.nav-progress-tick.active {
+  background: #ff0038;
+  box-shadow: 0 0 12px rgba(255,0,56,0.7), 0 0 24px rgba(255,0,56,0.35);
+}
+.nav-progress-label {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  color: #a0a0a0;
+  letter-spacing: 0.18em;
+  opacity: 0.55;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.nav-progress-tick.active .nav-progress-label { opacity: 1; color: #ff0038; }
+.nav-progress-tick:hover .nav-progress-label { opacity: 0.85; }
 .nav-logo { font-size: 1.5rem; letter-spacing: -0.01em; }
 .nav-logo-btn {
   background: transparent; border: none; padding: 0; margin: 0;
@@ -119,8 +158,10 @@ body {
 
 /* Arrow row flanking See More on video sections */
 .video-actions {
-  display: inline-flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   gap: 1rem;
+  width: 100%;
+  max-width: 62rem;
 }
 .video-actions .flow-arrow {
   position: static;
@@ -142,25 +183,22 @@ body {
 }
 .nav-link:hover { color: #fafafa; }
 
-/* Flow arrows */
+/* Flow arrows — big red, anchored to screen edges */
 .flow-arrow {
   position: fixed;
   top: 50%;
   transform: translateY(-50%);
   z-index: 40;
   display: flex; align-items: center; justify-content: center;
-  width: 2.75rem; height: 2.75rem;
+  width: 3.75rem; height: 3.75rem;
   padding: 0;
   border-radius: 9999px;
-  background: rgba(10,10,10,0.6);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: #fafafa;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 1.5rem;
-  line-height: 1;
+  background: transparent;
+  border: none;
+  color: #ff0038;
   cursor: pointer;
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
+  filter: drop-shadow(0 0 12px rgba(255,0,56,0.45));
+  transition: color 0.2s ease, transform 0.2s ease, filter 0.2s ease;
 }
 .flow-arrow > span {
   display: flex;
@@ -170,19 +208,21 @@ body {
   height: 100%;
   line-height: 1;
 }
-.flow-arrow svg { display: block; }
+.flow-arrow svg {
+  display: block;
+  width: 2.5rem;
+  height: 2.5rem;
+}
 .flow-arrow:hover {
-  border-color: rgba(255,0,56,0.5);
-  box-shadow: 0 0 20px rgba(255,0,56,0.25);
+  color: #ff6b35;
+  filter: drop-shadow(0 0 18px rgba(255,0,56,0.7));
 }
 .flow-arrow.active {
-  background: linear-gradient(135deg, #ff0038, #ff6b35);
-  border-color: rgba(255,107,53,0.8);
-  color: #fafafa;
-  box-shadow: 0 0 24px rgba(255,0,56,0.45);
+  color: #ff6b35;
+  filter: drop-shadow(0 0 22px rgba(255,0,56,0.85));
 }
-.flow-arrow.prev { left: 2rem; }
-.flow-arrow.next { right: 2rem; }
+.flow-arrow.prev { left: 1.5rem; }
+.flow-arrow.next { right: 1.5rem; }
 
 /* Pill nav — bare dots, no container. Active dot = red pill, inactive = grey round */
 .pill-nav {
@@ -336,7 +376,30 @@ body {
   box-shadow: 0 0 24px rgba(255,0,56,0.45);
 }
 
-.see-more-btn { min-width: 9.5rem; justify-content: center; }
+.see-more-btn {
+  width: 100%;
+  max-width: 62rem;
+  justify-content: center;
+  padding: 1.25rem 1.5rem;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: linear-gradient(135deg, #ff0038, #ff6b35);
+  color: #fafafa;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  padding: 0.75rem 1.5rem; border-radius: 9999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  box-shadow: 0 0 24px rgba(255,0,56,0.45);
+}
+.btn-primary:hover {
+  box-shadow: 0 0 32px rgba(255,0,56,0.6), 0 0 64px rgba(255,107,53,0.25);
+}
 
 /* Video frame */
 .video-frame {
@@ -382,13 +445,16 @@ body {
   display: flex; flex-direction: column; align-items: center;
   gap: 1.5rem; width: 100%; max-width: 72rem;
 }
+.video-slot {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 62rem;
+}
 .landing-intro-block {
   display: inline-block;
   will-change: clip-path, opacity;
-}
-.section-title {
-  font-size: clamp(1.5rem, 4vw, 2.5rem);
-  color: #fafafa;
 }
 .detail-panel {
   position: absolute;
@@ -397,7 +463,7 @@ body {
   backdrop-filter: blur(8px);
   padding: 3rem;
   overflow-y: auto;
-  z-index: 3;
+  z-index: 10;
   border: 1px solid rgba(255,255,255,0.1);
 }
 .detail-panel-close {
@@ -408,7 +474,89 @@ body {
   font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
 }
 
-@keyframes navbar-glow {
-  0%, 100% { opacity: 0.3; }
-  50%      { opacity: 0.6; }
+/* Timestamp strip under each video */
+.timestamp-row {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 62rem;
+}
+.timestamp-btn {
+  position: relative;
+  flex: 1;
+  aspect-ratio: 16/9;
+  background: #141414;
+  border: 1px solid rgba(255, 0, 56, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.timestamp-btn:hover:not(:disabled) {
+  border-color: #ff0038;
+  transform: scale(1.03);
+  box-shadow: 0 0 18px rgba(255, 0, 56, 0.25);
+}
+.timestamp-btn:disabled { opacity: 0.55; cursor: wait; }
+.timestamp-btn:focus-visible {
+  outline: 2px solid rgba(255, 0, 56, 0.7);
+  outline-offset: 2px;
+}
+.timestamp-btn img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.timestamp-btn-placeholder {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(160, 160, 160, 0.55);
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+}
+.timestamp-btn-badge {
+  position: absolute;
+  bottom: 0.4rem; right: 0.5rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: #fafafa;
+  background: rgba(10, 10, 10, 0.7);
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+}
+
+/* Dark overlay that dims the video while the unmute CTA is visible */
+.video-dim-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+/* Red unmute CTA overlaid on the video frame */
+.unmute-cta {
+  position: absolute;
+  top: 50%; left: 50%;
+  z-index: 4;
+  display: inline-flex; align-items: center; gap: 0.7rem;
+  background: #ff0038;
+  color: #fafafa;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 9999px;
+  font-size: 1.1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(255, 0, 56, 0.6), 0 0 48px rgba(255, 0, 56, 0.35);
+  animation: unmute-pulse 2s ease-in-out infinite;
+}
+.unmute-cta:hover { background: #ff2a55; }
+.unmute-cta-icon { display: inline-flex; }
+
+@keyframes unmute-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 56, 0.45), 0 0 40px rgba(255, 0, 56, 0.2); }
+  50%      { box-shadow: 0 0 32px rgba(255, 0, 56, 0.75), 0 0 64px rgba(255, 0, 56, 0.45); }
 }

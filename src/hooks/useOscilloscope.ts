@@ -17,6 +17,8 @@ export interface OscController {
   paramsRef: { current: OscParams }
   scrollRef: { current: { current: number; target: number } }
   mouseRef: { current: { x: number; y: number } }
+  waveTargetRef: { current: number }
+  waveAlphaRef: { current: number }
 }
 
 const REVEAL_DURATION = 2.4
@@ -86,6 +88,9 @@ export function useOscilloscope(
       scroll.current += (scroll.target - scroll.current) * 0.045
       const mouse = ctrl.mouseRef.current
       const p = ctrl.paramsRef.current
+      const waveTarget = ctrl.waveTargetRef.current
+      ctrl.waveAlphaRef.current += (waveTarget - ctrl.waveAlphaRef.current) * 0.04
+      const waveAlpha = ctrl.waveAlphaRef.current
 
       ctx.clearRect(0, 0, width, height)
 
@@ -114,6 +119,7 @@ export function useOscilloscope(
       const depth = 18 + mouse.y * 6 + scroll.current * 5
 
       ctx.save()
+      ctx.globalAlpha = waveAlpha
       ctx.lineWidth = 2.2
       ctx.strokeStyle = p.colorTrace
       ctx.shadowColor = p.colorGlow
@@ -178,6 +184,7 @@ export function useOscilloscope(
       }
 
       ctx.save()
+      ctx.globalAlpha = waveAlpha
       ctx.fillStyle = p.colorTrace
       ctx.shadowColor = p.colorGlow
       ctx.shadowBlur = 24
@@ -210,6 +217,8 @@ export function createOscController(): OscController {
     } },
     scrollRef: { current: { current: 0, target: 0 } },
     mouseRef: { current: { x: 0, y: 0 } },
+    waveTargetRef: { current: 1 },
+    waveAlphaRef: { current: 1 },
   }
 }
 

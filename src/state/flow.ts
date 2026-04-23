@@ -5,12 +5,12 @@ export type FlowKey = 'landing' | 'demo' | 'integration' | 'video-1' | 'video-2'
 export type OverlayKey = 'about' | 'contact' | null
 
 export const FLOW: { key: FlowKey; label: string }[] = [
-  { key: 'landing',         label: 'Landing' },
+  { key: 'landing',         label: 'Intro' },
   { key: 'demo',            label: 'Demo Reel' },
   { key: 'integration',     label: 'Integration' },
-  { key: 'video-1',         label: 'Video 1' },
-  { key: 'video-2',         label: 'Video 2' },
-  { key: 'video-3',         label: 'Video 3' },
+  { key: 'video-1',         label: 'Studio Cinematic' },
+  { key: 'video-2',         label: 'Operation Override' },
+  { key: 'video-3',         label: 'Araxys Skinline' },
   { key: 'post-production', label: 'Post Production' },
 ]
 
@@ -22,6 +22,8 @@ export interface FlowCtx {
   overlay: OverlayKey
   isTransitioning: boolean
   scrollDir: ScrollDir
+  soundOn: boolean
+  setSoundOn: (v: boolean) => void
   goTo: (targetIndex: number) => void
   next: () => void
   prev: () => void
