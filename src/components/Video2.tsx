@@ -5,6 +5,12 @@ export default function Video2() {
     <VideoSection
       title="Teamfight Tactics: Operation Override - Riot Games"
       videoUrl="https://www.youtube.com/embed/itnmbGMCOkc"
+      timestamps={[
+        { seconds: 4, thumbnail: '/images/timestamps/operation-override-01.png' },
+        { seconds: 14, thumbnail: '/images/timestamps/operation-override-02.png' },
+        { seconds: 26, thumbnail: '/images/timestamps/operation-override-03.png' },
+        { seconds: 37, thumbnail: '/images/timestamps/operation-override-04.png' },
+      ]}
       detail={{
         heading: 'Teamfight Tactics: Operation Override - Riot Games',
         paragraphs: [

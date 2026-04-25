@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Timestamp Picker</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #0b0b0d; color: #f4f4f5; }
+    body { margin: 0; padding: 24px; }
+    main { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; }
+    h1 { margin: 0; font-size: 22px; font-weight: 700; }
+    .panel { border: 1px solid #2a2a32; background: #141417; border-radius: 8px; padding: 16px; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+    .player { aspect-ratio: 16 / 9; background: #050505; border-radius: 6px; overflow: hidden; }
+    iframe { width: 100%; height: 100%; border: 0; }
+    label { display: grid; gap: 6px; font-size: 12px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.08em; }
+    input, select, textarea, button { font: inherit; }
+    input, select, textarea {
+      width: 100%; box-sizing: border-box; border: 1px solid #34343c; border-radius: 6px;
+      background: #0b0b0d; color: #f4f4f5; padding: 10px;
+    }
+    textarea { min-height: 170px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+    button {
+      border: 1px solid #ff0038; background: #ff0038; color: white; border-radius: 6px;
+      padding: 10px 12px; cursor: pointer; font-weight: 700;
+    }
+    button.secondary { background: transparent; color: #f4f4f5; border-color: #3f3f46; }
+    .row { display: flex; gap: 10px; align-items: end; }
+    .stack { display: grid; gap: 12px; }
+    .time { font-variant-numeric: tabular-nums; font-size: 34px; font-weight: 800; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid #27272f; padding: 8px 6px; text-align: left; }
+    th { color: #a1a1aa; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+    td:last-child, th:last-child { text-align: right; }
+    .note { color: #a1a1aa; font-size: 13px; line-height: 1.5; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } body { padding: 14px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Timestamp Picker</h1>
+    <section class="panel stack">
+      <div class="row">
+        <label>
+          Video
+          <select id="videoSelect"></select>
+        </label>
+        <label>
+          Custom YouTube URL
+          <input id="customUrl" placeholder="https://www.youtube.com/watch?v=..." />
+        </label>
+        <button id="loadCustom" class="secondary">Load</button>
+      </div>
+      <p class="note">Use YouTube controls to scrub to frame. Click Add Current Time. Export JSON, then run capture script to create jpgs from selected times.</p>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <div class="player"><div id="player"></div></div>
+      </div>
+      <aside class="panel stack">
+        <div class="time" id="currentTime">0:00.000</div>
+        <div class="row">
+          <label>
+            Label
+            <input id="labelInput" placeholder="Hit, Build, Reveal..." />
+          </label>
+          <button id="addMarker">Add</button>
+        </div>
+        <table>
+          <thead><tr><th>Time</th><th>Label</th><th></th></tr></thead>
+          <tbody id="markerRows"></tbody>
+        </table>
+      </aside>
+    </section>
+
+    <section class="panel stack">
+      <div class="row">
+        <button id="copyJson">Copy JSON</button>
+        <button id="downloadJson" class="secondary">Download JSON</button>
+      </div>
+      <textarea id="output" spellcheck="false"></textarea>
+    </section>
+  </main>
+
+  <script>
+    const videos = [
+      { key: 'video-1', title: 'KEINON - a Tendril Studio Cinematic', url: 'https://www.youtube.com/embed/s9kieH0nmbg' },
+      { key: 'video-2', title: 'Teamfight Tactics: Operation Override', url: 'https://www.youtube.com/embed/itnmbGMCOkc' },
+      { key: 'video-3', title: 'FUEL// Araxys Skinline Trailer', url: 'https://www.youtube.com/embed/hSeivzG1344' },
+    ]
+    const state = { video: videos[0], markers: [] }
+    let player
+
+    const videoSelect = document.querySelector('#videoSelect')
+    const customUrl = document.querySelector('#customUrl')
+    const currentTime = document.querySelector('#currentTime')
+    const labelInput = document.querySelector('#labelInput')
+    const markerRows = document.querySelector('#markerRows')
+    const output = document.querySelector('#output')
+
+    videos.forEach((video, index) => {
+      const option = document.createElement('option')
+      option.value = String(index)
+      option.textContent = video.title
+      videoSelect.append(option)
+    })
+
+    window.onYouTubeIframeAPIReady = () => {
+      player = new YT.Player('player', {
+        videoId: extractVideoId(state.video.url),
+        playerVars: { controls: 1, rel: 0, modestbranding: 1, playsinline: 1 },
+        events: { onReady: tick },
+      })
+    }
+
+    document.querySelector('#loadCustom').addEventListener('click', () => {
+      const url = customUrl.value.trim()
+      if (!url) return
+      state.video = { key: 'custom-video', title: 'Custom Video', url }
+      state.markers = []
+      loadVideo()
+    })
+
+    videoSelect.addEventListener('change', () => {
+      state.video = videos[Number(videoSelect.value)]
+      state.markers = []
+      loadVideo()
+    })
+
+    document.querySelector('#addMarker').addEventListener('click', () => {
+      if (!player?.getCurrentTime) return
+      const seconds = roundTime(player.getCurrentTime())
+      const label = labelInput.value.trim()
+      state.markers.push({ seconds, label })
+      state.markers.sort((a, b) => a.seconds - b.seconds)
+      labelInput.value = ''
+      render()
+    })
+
+    document.querySelector('#copyJson').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(output.value)
+    })
+
+    document.querySelector('#downloadJson').addEventListener('click', () => {
+      const blob = new Blob([output.value], { type: 'application/json' })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `${state.video.key}-timestamps.json`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    })
+
+    markerRows.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-index]')
+      if (!button) return
+      state.markers.splice(Number(button.dataset.index), 1)
+      render()
+    })
+
+    function loadVideo() {
+      player?.loadVideoById(extractVideoId(state.video.url))
+      render()
+    }
+
+    function tick() {
+      if (player?.getCurrentTime) currentTime.textContent = formatTime(player.getCurrentTime())
+      requestAnimationFrame(tick)
+    }
+
+    function render() {
+      markerRows.innerHTML = ''
+      state.markers.forEach((marker, index) => {
+        const tr = document.createElement('tr')
+        tr.innerHTML = `<td>${formatTime(marker.seconds)}</td><td>${escapeHtml(marker.label || '')}</td><td><button class="secondary" data-index="${index}">Remove</button></td>`
+        markerRows.append(tr)
+      })
+      output.value = JSON.stringify({
+        videoKey: state.video.key,
+        videoUrl: state.video.url,
+        duration: player?.getDuration?.() || undefined,
+        timestamps: state.markers.map((marker, index) => ({
+          seconds: marker.seconds,
+          label: marker.label || undefined,
+          image: `/images/timestamps/${state.video.key}-${String(index + 1).padStart(2, '0')}.jpg`,
+        })),
+      }, null, 2)
+    }
+
+    function extractVideoId(url) {
+      return url.match(/(?:embed\/|watch\?v=|youtu\.be\/)([A-Za-z0-9_-]+)/)?.[1] ?? url
+    }
+
+    function roundTime(value) { return Math.round(value * 1000) / 1000 }
+    function formatTime(value) {
+      const totalMs = Math.max(0, Math.round(value * 1000))
+      const mins = Math.floor(totalMs / 60000)
+      const secs = Math.floor((totalMs % 60000) / 1000)
+      const ms = totalMs % 1000
+      return `${mins}:${String(secs).padStart(2, '0')}.${String(ms).padStart(3, '0')}`
+    }
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+    }
+
+    render()
+  </script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>

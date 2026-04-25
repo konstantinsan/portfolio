@@ -9,6 +9,12 @@ export interface YouTubePlayerHandle {
   muted: boolean
   unmute: () => void
   seekToPercent: (percent: number) => void
+  seekToSeconds: (seconds: number) => void
+}
+
+export interface TimestampMarker {
+  seconds: number
+  thumbnail?: string
 }
 
 export function useYouTubePlayer(videoId: string): YouTubePlayerHandle {
@@ -72,6 +78,13 @@ export function useYouTubePlayer(videoId: string): YouTubePlayerHandle {
     player.playVideo()
   }, [])
 
+  const seekToSeconds = useCallback((seconds: number) => {
+    const player = playerRef.current
+    if (!player) return
+    player.seekTo(seconds, true)
+    player.playVideo()
+  }, [])
+
   const unmute = useCallback(() => {
     const player = playerRef.current
     if (!player) return
@@ -80,7 +93,7 @@ export function useYouTubePlayer(videoId: string): YouTubePlayerHandle {
     setSoundOn(true)
   }, [setSoundOn])
 
-  return { iframeRef, ready, muted, unmute, seekToPercent }
+  return { iframeRef, ready, muted, unmute, seekToPercent, seekToSeconds }
 }
 
 export function YouTubeEmbed({
@@ -95,7 +108,8 @@ export function YouTubeEmbed({
   suppressed?: boolean
 }) {
   const { soundOn } = useFlow()
-  const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=${soundOn ? 0 : 1}&enablejsapi=1&controls=1&playsinline=1&rel=0&modestbranding=1`
+  const initialMuteRef = useRef(soundOn ? 0 : 1)
+  const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=${initialMuteRef.current}&enablejsapi=1&controls=1&playsinline=1&rel=0&modestbranding=1`
   return (
     <>
       <iframe
@@ -149,35 +163,182 @@ export function TimestampRow({
   timestamps,
   thumbnails,
   handle,
+  videoId,
 }: {
-  timestamps: number[]
+  timestamps: TimestampMarker[]
   thumbnails?: (string | undefined)[]
   handle: YouTubePlayerHandle
+  videoId: string
 }) {
   return (
     <div className="timestamp-row">
-      {timestamps.map((percent, i) => {
-        const img = thumbnails?.[i]
+      {timestamps.map((marker, i) => {
+        const img = marker.thumbnail ?? thumbnails?.[i]
         return (
-          <button
+          <TimestampButton
             key={i}
-            type="button"
-            className="timestamp-btn"
-            onClick={() => handle.seekToPercent(percent)}
-            disabled={!handle.ready}
-            aria-label={`Jump to ${Math.round(percent * 100)}%`}
-          >
-            {img ? (
-              <img src={img} alt="" />
-            ) : (
-              <span className="timestamp-btn-placeholder font-display">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-            )}
-            <span className="timestamp-btn-badge font-display">{Math.round(percent * 100)}%</span>
-          </button>
+            marker={marker}
+            image={img}
+            index={i}
+            handle={handle}
+            videoId={videoId}
+          />
         )
       })}
     </div>
   )
+}
+
+function TimestampButton({
+  marker,
+  image,
+  index,
+  handle,
+  videoId,
+}: {
+  marker: TimestampMarker
+  image?: string
+  index: number
+  handle: YouTubePlayerHandle
+  videoId: string
+}) {
+  const [previewPlaying, setPreviewPlaying] = useState(false)
+  const [previewReady, setPreviewReady] = useState(false)
+
+  const playPreview = () => {
+    if (previewReady) setPreviewPlaying(true)
+  }
+
+  const stopPreview = () => {
+    setPreviewPlaying(false)
+  }
+
+  return (
+    <button
+      type="button"
+      className={`timestamp-btn${previewReady ? ' timestamp-btn-ready' : ''}`}
+      onMouseEnter={playPreview}
+      onMouseLeave={stopPreview}
+      onFocus={playPreview}
+      onBlur={stopPreview}
+      onClick={() => {
+        stopPreview()
+        handle.seekToSeconds(marker.seconds)
+      }}
+      disabled={!handle.ready}
+      aria-label={`Jump to ${formatTimestamp(marker.seconds)}`}
+    >
+      {image ? (
+        <img className="timestamp-fallback" src={image} alt="" />
+      ) : null}
+      <TimestampPreview
+        videoId={videoId}
+        seconds={marker.seconds}
+        title={`Preview ${index + 1}`}
+        playing={previewPlaying}
+        onReadyChange={setPreviewReady}
+        hidden={!previewPlaying}
+      />
+      {!image && !previewReady ? (
+        <span className="timestamp-btn-placeholder font-display">
+          {String(index + 1).padStart(2, '0')}
+        </span>
+      ) : null}
+    </button>
+  )
+}
+
+function TimestampPreview({
+  videoId,
+  seconds,
+  title,
+  playing,
+  onReadyChange,
+  hidden,
+}: {
+  videoId: string
+  seconds: number
+  title: string
+  playing: boolean
+  onReadyChange: (ready: boolean) => void
+  hidden: boolean
+}) {
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const playerRef = useRef<YTPlayer | null>(null)
+  const start = Math.max(0, Math.floor(seconds))
+  const src = `https://www.youtube.com/embed/${videoId}?autoplay=0&mute=1&enablejsapi=1&controls=0&playsinline=1&rel=0&modestbranding=1&start=${start}`
+
+  useEffect(() => {
+    let cancelled = false
+    onReadyChange(false)
+
+    loadYouTubeApi().then((YT) => {
+      if (cancelled || !iframeRef.current) return
+      const player = new YT.Player(iframeRef.current, {
+        events: {
+          onReady: (e) => {
+            if (cancelled) return
+            playerRef.current = e.target
+            try {
+              e.target.mute()
+              e.target.seekTo(start, true)
+              e.target.pauseVideo()
+              onReadyChange(true)
+            } catch {
+              /* noop */
+            }
+          },
+        },
+      })
+      playerRef.current = player
+    })
+
+    return () => {
+      cancelled = true
+      onReadyChange(false)
+      try {
+        playerRef.current?.destroy()
+      } catch {
+        /* noop */
+      }
+      playerRef.current = null
+    }
+  }, [onReadyChange, start])
+
+  useEffect(() => {
+    const player = playerRef.current
+    if (!player) return
+
+    try {
+      if (playing) {
+        player.seekTo(start, true)
+        player.playVideo()
+      } else {
+        player.pauseVideo()
+        player.seekTo(start, true)
+      }
+    } catch {
+      /* noop */
+    }
+  }, [playing, start])
+
+  return (
+    <iframe
+      ref={iframeRef}
+      className={`timestamp-preview${hidden ? ' timestamp-preview-hidden' : ''}`}
+      src={src}
+      title={title}
+      loading="lazy"
+      allow="autoplay; encrypted-media; picture-in-picture"
+      aria-hidden="true"
+      tabIndex={-1}
+    />
+  )
+}
+
+function formatTimestamp(seconds: number) {
+  const total = Math.max(0, Math.floor(seconds))
+  const mins = Math.floor(total / 60)
+  const secs = total % 60
+  return `${mins}:${String(secs).padStart(2, '0')}`
 }

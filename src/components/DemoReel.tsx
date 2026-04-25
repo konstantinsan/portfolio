@@ -5,6 +5,12 @@ export default function DemoReel() {
     <VideoSection
       title="Demo Reel"
       videoUrl="https://www.youtube.com/embed/JRXI7nRzEVM"
+      timestamps={[
+        { seconds: 19, thumbnail: '/images/timestamps/demo-01.png' },
+        { seconds: 29, thumbnail: '/images/timestamps/demo-02.png' },
+        { seconds: 38, thumbnail: '/images/timestamps/demo-03.png' },
+        { seconds: 49, thumbnail: '/images/timestamps/demo-04.png' },
+      ]}
       detail={{
         heading: 'Demo Reel',
         paragraphs: [

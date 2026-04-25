@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Frame Capture</title>
+  <style>
+    html, body { margin: 0; width: 480px; min-height: 270px; overflow: hidden; background: #000; }
+    #player { width: 480px; height: 270px; background: #000; }
+    #ready { position: absolute; left: -9999px; top: -9999px; }
+  </style>
+</head>
+<body>
+  <div id="player"></div>
+  <div id="ready" aria-live="polite">Loading</div>
+  <script>
+    const params = new URLSearchParams(location.search)
+    const videoId = params.get('video') || ''
+    const seconds = Number(params.get('t') || 0)
+
+    window.onYouTubeIframeAPIReady = () => {
+      new YT.Player('player', {
+        videoId,
+        width: 480,
+        height: 270,
+        playerVars: {
+          autoplay: 1,
+          mute: 1,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0,
+          start: Math.max(0, Math.floor(seconds)),
+        },
+        events: {
+          onReady: ({ target }) => {
+            target.mute()
+            target.seekTo(seconds, true)
+            target.playVideo()
+            window.setTimeout(() => {
+              target.pauseVideo()
+              target.seekTo(seconds, true)
+              window.setTimeout(() => {
+                document.querySelector('#ready').textContent = 'Ready'
+              }, 700)
+            }, 900)
+          },
+        },
+      })
+    }
+  </script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>

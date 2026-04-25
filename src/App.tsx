@@ -267,6 +267,43 @@ function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [overlay, next, prev, closeOverlay])
 
+  // Touch → horizontal swipe = prev/next
+  useEffect(() => {
+    let startX = 0, startY = 0, startT = 0, tracking = false
+    let clearTimer = 0
+    const THRESHOLD = 50
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) { tracking = false; return }
+      const t = e.touches[0]
+      startX = t.clientX; startY = t.clientY; startT = performance.now()
+      tracking = true
+    }
+    const onEnd = (e: TouchEvent) => {
+      if (!tracking) return
+      tracking = false
+      const t = e.changedTouches[0]
+      const dx = t.clientX - startX
+      const dy = t.clientY - startY
+      const dt = performance.now() - startT
+      if (Math.abs(dx) < THRESHOLD) return
+      if (Math.abs(dy) > Math.abs(dx)) return
+      if (dt > 800) return
+      if (overlay) return
+      setScrollDir(dx < 0 ? 'down' : 'up')
+      window.clearTimeout(clearTimer)
+      clearTimer = window.setTimeout(() => setScrollDir(null), 420)
+      if (dx < 0) next()
+      else prev()
+    }
+    window.addEventListener('touchstart', onStart, { passive: true })
+    window.addEventListener('touchend', onEnd, { passive: true })
+    return () => {
+      window.removeEventListener('touchstart', onStart)
+      window.removeEventListener('touchend', onEnd)
+      window.clearTimeout(clearTimer)
+    }
+  }, [next, prev, overlay])
+
   // Wheel → oscilloscope scroll target + transient arrow highlight
   useEffect(() => {
     let clearTimer = 0
@@ -305,6 +342,7 @@ function App() {
         <AnimatePresence>
           <motion.div
             key={current}
+            className="flow-section-content"
             variants={{
               enter: { opacity: 0 },
               center: { opacity: 1 },
@@ -314,7 +352,6 @@ function App() {
             animate="center"
             exit="exit"
             transition={{ duration: 0.2, delay: 0.05, ease: 'easeOut' }}
-            style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 3rem 8rem' }}
           >
             {current === 'landing' && <Landing />}
             {current === 'demo' && <DemoReel />}

@@ -5,6 +5,12 @@ export default function Integration() {
     <VideoSection
       title="Integration"
       videoUrl="https://www.youtube.com/embed/L0E4eqil1Nw"
+      timestamps={[
+        { seconds: 6, thumbnail: '/images/timestamps/integration-01.png' },
+        { seconds: 39, thumbnail: '/images/timestamps/integration-02.png' },
+        { seconds: 115, thumbnail: '/images/timestamps/integration-03.png' },
+        { seconds: 134, thumbnail: '/images/timestamps/integration-04.png' },
+      ]}
       detail={{
         heading: 'Warhammer 40,000: Boltgun - Weapon system Redesign',
         paragraphs: [

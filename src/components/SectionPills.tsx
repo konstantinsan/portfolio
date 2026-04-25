@@ -17,6 +17,7 @@ export default function SectionPills() {
             title={s.label}
           >
             <span className="pill-dot" aria-hidden="true" />
+            <span className="pill-label">{s.label}</span>
           </button>
         )
       })}

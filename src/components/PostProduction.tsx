@@ -5,6 +5,12 @@ export default function PostProduction() {
     <VideoSection
       title="Post Production"
       videoUrl="https://www.youtube.com/embed/dEMiW-qUpB0"
+      timestamps={[
+        { seconds: 15, thumbnail: '/images/timestamps/post-production-01.png' },
+        { seconds: 29, thumbnail: '/images/timestamps/post-production-02.png' },
+        { seconds: 37, thumbnail: '/images/timestamps/post-production-03.png' },
+        { seconds: 51, thumbnail: '/images/timestamps/post-production-04.png' },
+      ]}
       detail={{
         heading: 'Most Computers Realme 9 Pro 5G',
         paragraphs: [

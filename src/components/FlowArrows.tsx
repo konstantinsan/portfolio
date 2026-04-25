@@ -16,9 +16,15 @@ export default function FlowArrows() {
             key="prev"
             className={`flow-arrow prev${flow.scrollDir === 'up' ? ' active' : ''}`}
             initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            animate={flow.scrollDir === 'up'
+              ? { opacity: 1, x: 0, scale: [1, 0.82, 1.06, 1] }
+              : { opacity: 1, x: 0, scale: 1 }}
+            transition={flow.scrollDir === 'up'
+              ? { duration: 0.36, ease: [0.16, 1, 0.3, 1], times: [0, 0.35, 0.7, 1] }
+              : { duration: 0.2 }}
             exit={{ opacity: 0, x: -20 }}
             whileHover={{ x: -4 }}
+            whileTap={{ scale: 0.82 }}
             onClick={flow.prev}
             aria-label={`Previous: ${prev.label}`}
           >
@@ -34,9 +40,15 @@ export default function FlowArrows() {
             key="next"
             className={`flow-arrow next${flow.scrollDir === 'down' ? ' active' : ''}`}
             initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+            animate={flow.scrollDir === 'down'
+              ? { opacity: 1, x: 0, scale: [1, 0.82, 1.06, 1] }
+              : { opacity: 1, x: 0, scale: 1 }}
+            transition={flow.scrollDir === 'down'
+              ? { duration: 0.36, ease: [0.16, 1, 0.3, 1], times: [0, 0.35, 0.7, 1] }
+              : { duration: 0.2 }}
             exit={{ opacity: 0, x: 20 }}
             whileHover={{ x: 4 }}
+            whileTap={{ scale: 0.82 }}
             onClick={flow.next}
             aria-label={`Next: ${next.label}`}
           >

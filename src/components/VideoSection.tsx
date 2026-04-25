@@ -4,7 +4,7 @@ import { useFlow } from '@/state/flow'
 import RevealBlock from '@/components/RevealBlock'
 import { expandRect } from '@/lib/reveal'
 import { extractVideoId } from '@/lib/youtube'
-import { TimestampRow, YouTubeEmbed, useYouTubePlayer } from '@/components/YouTubePlayer'
+import { TimestampRow, YouTubeEmbed, type TimestampMarker, useYouTubePlayer } from '@/components/YouTubePlayer'
 
 export interface VideoSectionDetail {
   heading: string
@@ -15,12 +15,17 @@ export interface VideoSectionProps {
   title: string
   detail: VideoSectionDetail
   videoUrl: string
-  timestamps?: number[]
+  timestamps?: TimestampMarker[]
   thumbnails?: (string | undefined)[]
   thumbnailUrl?: string
 }
 
-const DEFAULT_TIMESTAMPS = [0.25, 0.5, 0.75, 0.9]
+const DEFAULT_TIMESTAMPS: TimestampMarker[] = [
+  { seconds: 15 },
+  { seconds: 30 },
+  { seconds: 45 },
+  { seconds: 60 },
+]
 
 const ENTER_STAGGER = {
   initial: { opacity: 0, scale: 0.9 },
@@ -53,23 +58,25 @@ export default function VideoSection({ title, detail, videoUrl, timestamps = DEF
   useEffect(() => { setPanelOpen(false) }, [flow.index])
 
   return (
-    <div className="section-shell">
+    <div className="section-shell video-section-shell">
       <div ref={frameRef} className="video-slot">
         <RevealBlock className="video-frame-reveal" scaleOnReveal>
-          <div className="video-frame" style={{ position: 'relative' }}>
-            <div className="video-glow" />
-            <img
-              src={heroThumb}
-              alt=""
-              aria-hidden="true"
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
-            />
-            <YouTubeEmbed videoId={videoId} title={title} handle={player} suppressed={panelOpen} />
+          <div className="video-reveal-stack">
+            <div className="video-frame" style={{ position: 'relative' }}>
+              <div className="video-glow" />
+              <img
+                src={heroThumb}
+                alt=""
+                aria-hidden="true"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
+              />
+              <YouTubeEmbed videoId={videoId} title={title} handle={player} suppressed={panelOpen} />
+            </div>
+            <motion.div style={{ width: '100%', display: 'flex', justifyContent: 'center' }} {...ENTER_STAGGER}>
+              <TimestampRow timestamps={timestamps} thumbnails={thumbnails} handle={player} videoId={videoId} />
+            </motion.div>
           </div>
         </RevealBlock>
-        <motion.div style={{ width: '100%', display: 'flex', justifyContent: 'center' }} {...ENTER_STAGGER}>
-          <TimestampRow timestamps={timestamps} thumbnails={thumbnails} handle={player} />
-        </motion.div>
         <AnimatePresence>
           {panelOpen && (
             <motion.div

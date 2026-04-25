@@ -3,8 +3,14 @@ import VideoSection from './VideoSection'
 export default function Video1() {
   return (
     <VideoSection
-      title="KEINON - a Tendril Studio Cinematic"
+      title="Keinon"
       videoUrl="https://www.youtube.com/embed/s9kieH0nmbg"
+      timestamps={[
+        { seconds: 2, thumbnail: '/images/timestamps/keinon-01.png' },
+        { seconds: 11, thumbnail: '/images/timestamps/keinon-02.png' },
+        { seconds: 19, thumbnail: '/images/timestamps/keinon-03.png' },
+        { seconds: 24, thumbnail: '/images/timestamps/keinon-04.png' },
+      ]}
       detail={{
         heading: 'KEINON - a Tendril Studio Cinematic',
         paragraphs: [

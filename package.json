@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "timestamp:picker": "vite --host 127.0.0.1 --open /tools/timestamp-picker.html",
+    "timestamp:capture": "node tools/capture-timestamp-frames.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

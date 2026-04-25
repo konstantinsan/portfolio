@@ -8,7 +8,7 @@ export const FLOW: { key: FlowKey; label: string }[] = [
   { key: 'landing',         label: 'Intro' },
   { key: 'demo',            label: 'Demo Reel' },
   { key: 'integration',     label: 'Integration' },
-  { key: 'video-1',         label: 'Studio Cinematic' },
+  { key: 'video-1',         label: 'Keinon' },
   { key: 'video-2',         label: 'Operation Override' },
   { key: 'video-3',         label: 'Araxys Skinline' },
   { key: 'post-production', label: 'Post Production' },
