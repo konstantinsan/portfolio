@@ -163,14 +163,16 @@ export function useOscilloscope(
       if (drawing) ctx.stroke()
       ctx.restore()
 
-       if (p.mode !== 'idle' || slotHasContent) {
+       if (slotHasContent) {
         const borderHalfH = slotHasContent
           ? (slotBottom - slotTop) * 0.5 * (reveal?.borderScale ?? 1)
           : 22 * (reveal?.borderScale ?? 1)
-        const lx = Math.min(width, Math.max(0, slotLeft))
-        const rx = Math.min(width, Math.max(0, slotRight))
+        // 8px inset prevents brackets vanishing at screen edges on narrow viewports
+        const lx = Math.max(8, Math.min(width - 8, slotLeft))
+        const rx = Math.max(8, Math.min(width - 8, slotRight))
         const ly = slotHasContent ? (slotTop + slotBottom) * 0.5 : centerY
         ctx.save()
+        ctx.globalAlpha = 1
         ctx.strokeStyle = p.colorTrace
         ctx.lineWidth = 2.2
         ctx.shadowColor = p.colorGlow
