@@ -5,10 +5,10 @@ import { REVEAL_DURATION } from '@/hooks/useOscilloscope'
 import RevealBlock from '@/components/RevealBlock'
 import { expandRect } from '@/lib/reveal'
 
-export default function Landing() {
+export default function Landing({ skipIntro }: { skipIntro: boolean }) {
   const flow = useFlow()
   const introRef = useRef<HTMLDivElement>(null)
-  const [showStart, setShowStart] = useState(false)
+  const [showStart, setShowStart] = useState(skipIntro)
 
   // Measure the full landing intro block so the oscilloscope frames the content block.
   useEffect(() => {
@@ -38,9 +38,10 @@ export default function Landing() {
   }, [flow])
 
   useEffect(() => {
+    if (skipIntro) return
     const t = setTimeout(() => setShowStart(true), 2000)
     return () => clearTimeout(t)
-  }, [])
+  }, [skipIntro])
 
   return (
     <div className="section-shell" style={{ gap: 0, position: 'relative' }}>
@@ -48,7 +49,7 @@ export default function Landing() {
         <motion.div
           ref={introRef}
           className="landing-intro-block"
-          initial={{ opacity: 0 }}
+          initial={skipIntro ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: REVEAL_DURATION, ease: [0.16, 1, 0.3, 1] }}
           style={{ textAlign: 'center' }}
@@ -71,24 +72,24 @@ export default function Landing() {
             <>
               <motion.button
                 key="start-sound"
-                initial={{ opacity: 0, y: 20 }}
+                initial={skipIntro ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                whileHover={{ scale: 1.05, transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] } }}
+                whileHover={{ scale: 1.05, transition: { duration: 0.04875, ease: [0.16, 1, 0.3, 1] } }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="btn-primary font-display"
+                className="btn-primary landing-start-button"
                 onClick={() => { flow.setSoundOn(true); flow.next() }}
               >
-                Start with Sound
+                Start
               </motion.button>
               <motion.button
                 key="start-muted"
-                initial={{ opacity: 0, y: 20 }}
+                initial={skipIntro ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                whileHover={{ scale: 1.05, transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] } }}
+                whileHover={{ scale: 1.05, transition: { duration: 0.0975, ease: [0.16, 1, 0.3, 1] } }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
-                className="btn-outline font-display"
+                className="btn-outline landing-start-button"
                 onClick={() => { flow.setSoundOn(false); flow.next() }}
               >
                 Start Muted

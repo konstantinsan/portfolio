@@ -38,7 +38,7 @@ export default function Nav() {
               aria-label={s.label}
               title={s.label}
             >
-              <span className="nav-progress-label font-display" aria-hidden="true">{String(i + 1).padStart(2, '0')} {s.label}</span>
+              <span className="nav-progress-label" aria-hidden="true">{String(i + 1).padStart(2, '0')} {s.label}</span>
             </button>
           )
         })}

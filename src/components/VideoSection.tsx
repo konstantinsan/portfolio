@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFlow } from '@/state/flow'
 import RevealBlock from '@/components/RevealBlock'
@@ -9,6 +9,7 @@ import { TimestampRow, YouTubeEmbed, type TimestampMarker, useYouTubePlayer } fr
 export interface VideoSectionDetail {
   heading: string
   paragraphs: string[]
+  tabs?: { label: string; heading: string; paragraphs: string[] }[]
 }
 
 export interface VideoSectionProps {
@@ -35,10 +36,13 @@ const ENTER_STAGGER = {
 
 export default function VideoSection({ title, detail, videoUrl, timestamps = DEFAULT_TIMESTAMPS, thumbnails, thumbnailUrl }: VideoSectionProps) {
   const flow = useFlow()
+  const tabId = useId()
   const frameRef = useRef<HTMLDivElement>(null)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState(0)
+  const currentDetail = detail.tabs?.[activeTab] ?? detail
   const videoId = extractVideoId(videoUrl)
-  const player = useYouTubePlayer(videoId)
+  const player = useYouTubePlayer(videoId, panelOpen)
   const heroThumb = thumbnailUrl ?? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
 
   useEffect(() => {
@@ -55,7 +59,7 @@ export default function VideoSection({ title, detail, videoUrl, timestamps = DEF
     return () => window.removeEventListener('resize', measure)
   }, [flow])
 
-  useEffect(() => { setPanelOpen(false) }, [flow.index])
+  useEffect(() => { setPanelOpen(false); setActiveTab(0) }, [flow.index])
 
   return (
     <div className="section-shell video-section-shell">
@@ -88,21 +92,50 @@ export default function VideoSection({ title, detail, videoUrl, timestamps = DEF
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             >
               <button className="detail-panel-close" onClick={() => setPanelOpen(false)}>Close x</button>
-              <h3 className="font-heading text-base sm:text-lg md:text-xl lg:text-2xl" style={{ marginBottom: '1rem', color: '#fafafa' }}>{detail.heading}</h3>
-              {detail.paragraphs.map((p, i) => (
+              {detail.tabs && (
+                <div className="detail-tabs" role="tablist" aria-label={`${title} details`}>
+                  {detail.tabs.map((tab, index) => (
+                    <button
+                      key={tab.label}
+                      id={`${tabId}-tab-${index}`}
+                      className="detail-tab"
+                      role="tab"
+                      aria-selected={activeTab === index}
+                      aria-controls={`${tabId}-panel`}
+                      tabIndex={activeTab === index ? 0 : -1}
+                      onClick={() => setActiveTab(index)}
+                      onKeyDown={(event) => {
+                        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+                        event.preventDefault()
+                        const next = event.key === 'Home' ? 0 : event.key === 'End' ? detail.tabs!.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + detail.tabs!.length) % detail.tabs!.length
+                        setActiveTab(next)
+                        document.getElementById(`${tabId}-tab-${next}`)?.focus()
+                      }}
+                    >{tab.label}</button>
+                  ))}
+                </div>
+              )}
+              {!detail.tabs && (
+                <div className="detail-tabs">
+                  <h3 className="detail-tab detail-title">{currentDetail.heading}</h3>
+                </div>
+              )}
+              <div role={detail.tabs ? 'tabpanel' : undefined} id={detail.tabs ? `${tabId}-panel` : undefined} aria-labelledby={detail.tabs ? `${tabId}-tab-${activeTab}` : undefined} tabIndex={detail.tabs ? 0 : undefined}>
+              {currentDetail.paragraphs.map((p, i) => (
                 <p key={i} className="text-sm sm:text-base" style={{ color: '#a0a0a0', marginBottom: '0.85rem', lineHeight: 1.7 }}>{p}</p>
               ))}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
       <motion.div className="video-actions" {...ENTER_STAGGER}>
         <motion.button
-          whileHover={{ scale: 1.02, transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] } }}
+          whileHover={{ scale: 1.02, transition: { duration: 0.0975, ease: [0.16, 1, 0.3, 1] } }}
           className="btn-outline font-display see-more-btn"
           onClick={() => setPanelOpen(v => !v)}
         >
-          {panelOpen ? 'Close' : 'See More'}
+          {panelOpen ? 'Close' : 'See More..'}
         </motion.button>
       </motion.div>
     </div>

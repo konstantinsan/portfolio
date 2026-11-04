@@ -23,7 +23,7 @@ export default function FlowArrows() {
               ? { duration: 0.36, ease: [0.16, 1, 0.3, 1], times: [0, 0.35, 0.7, 1] }
               : { duration: 0.2 }}
             exit={{ opacity: 0, x: -20 }}
-            whileHover={{ x: -4 }}
+            whileHover={{ x: -4, transition: { duration: 0.13 } }}
             whileTap={{ scale: 0.82 }}
             onClick={flow.prev}
             aria-label={`Previous: ${prev.label}`}
@@ -47,7 +47,7 @@ export default function FlowArrows() {
               ? { duration: 0.36, ease: [0.16, 1, 0.3, 1], times: [0, 0.35, 0.7, 1] }
               : { duration: 0.2 }}
             exit={{ opacity: 0, x: 20 }}
-            whileHover={{ x: 4 }}
+            whileHover={{ x: 4, transition: { duration: 0.13 } }}
             whileTap={{ scale: 0.82 }}
             onClick={flow.next}
             aria-label={`Next: ${next.label}`}

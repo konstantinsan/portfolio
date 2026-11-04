@@ -5,6 +5,8 @@ export interface YTPlayer {
   unMute(): void
   mute(): void
   isMuted(): boolean
+  getVolume(): number
+  setVolume(volume: number): void
   getDuration(): number
   destroy(): void
 }

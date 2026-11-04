@@ -1,17 +1,13 @@
 import { createContext, useContext } from 'react'
 import type { OscController } from '@/hooks/useOscilloscope'
 
-export type FlowKey = 'landing' | 'demo' | 'integration' | 'video-1' | 'video-2' | 'video-3' | 'post-production'
+export type FlowKey = 'landing' | 'demo' | 'integration'
 export type OverlayKey = 'about' | 'contact' | null
 
 export const FLOW: { key: FlowKey; label: string }[] = [
   { key: 'landing',         label: 'Intro' },
   { key: 'demo',            label: 'Demo Reel' },
   { key: 'integration',     label: 'Integration' },
-  { key: 'video-1',         label: 'Keinon' },
-  { key: 'video-2',         label: 'Operation Override' },
-  { key: 'video-3',         label: 'Araxys Skinline' },
-  { key: 'post-production', label: 'Post Production' },
 ]
 
 export type ScrollDir = 'up' | 'down' | null

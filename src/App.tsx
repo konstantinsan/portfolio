@@ -9,10 +9,6 @@ import StickyContactBar from '@/components/StickyContactBar'
 import Landing from '@/components/Landing'
 import DemoReel from '@/components/DemoReel'
 import Integration from '@/components/Integration'
-import Video1 from '@/components/Video1'
-import Video2 from '@/components/Video2'
-import Video3 from '@/components/Video3'
-import PostProduction from '@/components/PostProduction'
 import About from '@/components/About'
 import Contact from '@/components/Contact'
 
@@ -22,6 +18,11 @@ const TRANSITION_MS = REVEAL_DURATION * 1000
 const POST_TRANSITION_MS = 396
 const VIDEO_SQUEEZE_MS = 300
 const VIDEO_SQUEEZE_FLOOR = 0.8
+const LANDING_VISITED_KEY = 'kaudio-landing-visited'
+
+function hasVisitedLanding() {
+  try { return sessionStorage.getItem(LANDING_VISITED_KEY) === 'true' } catch { return false }
+}
 
 function isLandingKey(i: number) {
   return FLOW[i]?.key === 'landing'
@@ -37,6 +38,8 @@ function App() {
   const transitionStartRef = useRef(0)
   const rafRef = useRef(0)
   const slotVersionRef = useRef(0)
+  const [returningSession] = useState(hasVisitedLanding)
+  const landingVisitedRef = useRef(returningSession)
 
   const controller = useMemo(() => createOscController(), [])
 
@@ -47,7 +50,7 @@ function App() {
 
     const tick = () => {
       if (cancelled) return
-      const raw = Math.min(1, (performance.now() - start) / inDurMs)
+      const raw = inDurMs === 0 ? 1 : Math.min(1, (performance.now() - start) / inDurMs)
       const prog = ease(raw)
       p.progress = prog
       if (raw < 1) {
@@ -80,6 +83,7 @@ function App() {
 
   // Initial landing reveal waits for the slot measurement so the wave hugs content.
   useEffect(() => {
+    if (returningSession) return
     const p = controller.paramsRef.current
     p.mode = 'paused'
     p.direction = 'right'
@@ -90,7 +94,11 @@ function App() {
       stopWaiting()
       cancelAnimationFrame(rafRef.current)
     }
-  }, [controller, startRevealIn])
+  }, [controller, startRevealIn, returningSession])
+
+  useEffect(() => {
+    try { sessionStorage.setItem(LANDING_VISITED_KEY, 'true') } catch { /* Keep in-memory history when storage is unavailable. */ }
+  }, [])
 
   useEffect(() => {
     const p = controller.paramsRef.current
@@ -108,6 +116,8 @@ function App() {
   const goTo = useCallback((target: number) => {
     if (target === index || target < 0 || target >= FLOW.length) return
     if (isTransitioning || overlay) return
+
+    if (isLandingKey(index)) landingVisitedRef.current = true
 
     const dir: 1 | -1 = target > index ? 1 : -1
     setDirection(dir)
@@ -178,7 +188,7 @@ function App() {
       setIndex(target)
       p.direction = dir === 1 ? 'right' : 'left'
       p.centered = true
-      startRevealIn(slotVersionBeforeSwitch, POST_TRANSITION_MS / 2)
+      startRevealIn(slotVersionBeforeSwitch, isLandingKey(target) ? 0 : POST_TRANSITION_MS / 2)
     }
 
     rafRef.current = requestAnimationFrame(tickOut)
@@ -328,6 +338,7 @@ function App() {
   }), [index, direction, overlay, isTransitioning, scrollDir, soundOn, goTo, next, prev, openOverlay, closeOverlay, setSlotRect, controller])
 
   const current = FLOW[index].key
+  const skipLandingIntro = current === 'landing' && (index === 0 && landingVisitedRef.current)
 
   useEffect(() => {
     controller.waveTargetRef.current = current === 'landing' ? 1 : 0
@@ -348,18 +359,14 @@ function App() {
               center: { opacity: 1 },
               exit: { opacity: 0, transition: { duration: 0.12, ease: 'easeIn' } },
             }}
-            initial="enter"
+            initial={skipLandingIntro ? false : 'enter'}
             animate="center"
             exit="exit"
             transition={{ duration: 0.2, delay: 0.05, ease: 'easeOut' }}
           >
-            {current === 'landing' && <Landing />}
+            {current === 'landing' && <Landing skipIntro={skipLandingIntro} />}
             {current === 'demo' && <DemoReel />}
             {current === 'integration' && <Integration />}
-            {current === 'video-1' && <Video1 />}
-            {current === 'video-2' && <Video2 />}
-            {current === 'video-3' && <Video3 />}
-            {current === 'post-production' && <PostProduction />}
           </motion.div>
         </AnimatePresence>
       </div>

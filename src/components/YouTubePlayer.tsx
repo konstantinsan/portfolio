@@ -7,6 +7,7 @@ export interface YouTubePlayerHandle {
   iframeRef: React.RefObject<HTMLIFrameElement | null>
   ready: boolean
   muted: boolean
+  videoVisible: boolean
   unmute: () => void
   seekToPercent: (percent: number) => void
   seekToSeconds: (seconds: number) => void
@@ -17,15 +18,17 @@ export interface TimestampMarker {
   thumbnail?: string
 }
 
-export function useYouTubePlayer(videoId: string): YouTubePlayerHandle {
+export function useYouTubePlayer(videoId: string, ducked = false): YouTubePlayerHandle {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const playerRef = useRef<YTPlayer | null>(null)
   const durationRef = useRef(0)
+  const originalVolumeRef = useRef<number | null>(null)
   const { soundOn, setSoundOn } = useFlow()
   const soundOnRef = useRef(soundOn)
   soundOnRef.current = soundOn
   const [ready, setReady] = useState(false)
   const [muted, setMuted] = useState(!soundOn)
+  const [videoVisible, setVideoVisible] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -52,6 +55,17 @@ export function useYouTubePlayer(videoId: string): YouTubePlayerHandle {
               if (!durationRef.current) durationRef.current = p.getDuration() || 0
             }, 500)
           },
+          onStateChange: (e) => {
+            if (cancelled) return
+            const YT = window.YT
+            if (!YT) return
+            setVideoVisible(
+              e.data === YT.PlayerState.PLAYING ||
+              e.data === YT.PlayerState.PAUSED ||
+              e.data === YT.PlayerState.CUED ||
+              e.data === YT.PlayerState.ENDED,
+            )
+          },
         },
       })
       playerRef.current = player
@@ -66,8 +80,37 @@ export function useYouTubePlayer(videoId: string): YouTubePlayerHandle {
         /* noop */
       }
       playerRef.current = null
+      originalVolumeRef.current = null
+      setVideoVisible(false)
     }
   }, [videoId])
+
+  useEffect(() => {
+    const player = playerRef.current
+    if (!ready || !player) return
+
+    if (ducked && originalVolumeRef.current === null) {
+      originalVolumeRef.current = player.getVolume()
+    }
+    const originalVolume = originalVolumeRef.current
+    if (originalVolume === null) return
+
+    const startVolume = player.getVolume()
+    const targetVolume = ducked ? originalVolume * 0.6 : originalVolume
+    const startTime = performance.now()
+    let frame = 0
+    const fade = (now: number) => {
+      const progress = Math.min((now - startTime) / 400, 1)
+      player.setVolume(startVolume + (targetVolume - startVolume) * progress)
+      if (progress < 1) {
+        frame = requestAnimationFrame(fade)
+      } else if (!ducked) {
+        originalVolumeRef.current = null
+      }
+    }
+    frame = requestAnimationFrame(fade)
+    return () => cancelAnimationFrame(frame)
+  }, [ducked, ready])
 
   const seekToPercent = useCallback((percent: number) => {
     const player = playerRef.current
@@ -93,7 +136,7 @@ export function useYouTubePlayer(videoId: string): YouTubePlayerHandle {
     setSoundOn(true)
   }, [setSoundOn])
 
-  return { iframeRef, ready, muted, unmute, seekToPercent, seekToSeconds }
+  return { iframeRef, ready, muted, videoVisible, unmute, seekToPercent, seekToSeconds }
 }
 
 export function YouTubeEmbed({
@@ -118,7 +161,17 @@ export function YouTubeEmbed({
         title={title}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          opacity: handle.videoVisible ? 1 : 0,
+          pointerEvents: handle.videoVisible ? 'auto' : 'none',
+          transition: 'opacity 0.18s ease',
+        }}
       />
       <AnimatePresence>
         {handle.muted && !suppressed && (

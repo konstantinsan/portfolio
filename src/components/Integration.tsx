@@ -5,6 +5,7 @@ export default function Integration() {
     <VideoSection
       title="Integration"
       videoUrl="https://www.youtube.com/embed/L0E4eqil1Nw"
+      thumbnailUrl="/images/video-fallbacks/integration.png"
       timestamps={[
         { seconds: 6, thumbnail: '/images/timestamps/integration-01.png' },
         { seconds: 39, thumbnail: '/images/timestamps/integration-02.png' },

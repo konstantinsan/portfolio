@@ -6,9 +6,9 @@ export default function StickyContactBar() {
   return (
     <div className={`sticky-contact-bar ${hidden ? 'hidden' : ''}`}>
       <div className="sticky-contact-bar-inner">
-        <a className="btn-gradient" href="mailto:konstantin.zlatkov1997@gmail.com">Email</a>
-        <a className="btn-gradient" href="https://linkedin.com" target="_blank" rel="noreferrer">LinkedIn</a>
-        <a className="btn-gradient" href="https://upwork.com" target="_blank" rel="noreferrer">Upwork</a>
+        <a className="btn-gradient" href="mailto:kaudiodesign@gmail.com">Email</a>
+        <a className="btn-gradient" href="https://www.linkedin.com/in/thekonstantin/" target="_blank" rel="noreferrer">LinkedIn</a>
+        <a className="btn-gradient" href="https://www.upwork.com/freelancers/konstantinzlatkov" target="_blank" rel="noreferrer">Upwork</a>
       </div>
     </div>
   )
