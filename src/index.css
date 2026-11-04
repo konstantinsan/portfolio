@@ -489,7 +489,7 @@ body {
   max-width: min(72rem, calc(100vw - 6rem));
 }
 .video-section-shell {
-  --video-section-width: min(62rem, calc(100vw - 6rem), calc((100dvh - 17.5rem) * 1.422));
+  --video-section-width: min(68rem, calc(100vw - 6rem), calc((100dvh - 22rem) * 1.7778));
   transform: translateY(2.5rem);
 }
 .video-slot {
@@ -559,6 +559,7 @@ body {
 /* Timestamp strip under each video */
 .timestamp-row {
   display: flex;
+  justify-content: center;
   gap: 0.75rem;
   width: 100%;
   max-width: var(--video-section-width, 62rem);
@@ -568,6 +569,8 @@ body {
 .timestamp-btn {
   position: relative;
   flex: 1;
+  min-width: 0;
+  max-width: 8.8889rem;
   aspect-ratio: 16/9;
   background: #141414;
   border: 1px solid rgba(255, 0, 56, 0.3);

@@ -63,10 +63,10 @@ export default function VideoSection({ title, detail, videoUrl, timestamps = DEF
 
   return (
     <div className="section-shell video-section-shell">
-      <div ref={frameRef} className="video-slot">
+      <div className="video-slot">
         <RevealBlock className="video-frame-reveal" scaleOnReveal>
           <div className="video-reveal-stack">
-            <div className="video-frame" style={{ position: 'relative' }}>
+            <div ref={frameRef} className="video-frame" style={{ position: 'relative' }}>
               <div className="video-glow" />
               <img
                 src={heroThumb}
