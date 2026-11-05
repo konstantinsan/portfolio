@@ -4,7 +4,7 @@ export default function DemoReel() {
   return (
     <VideoSection
       title="Demo Reel"
-      videoUrl="https://www.youtube.com/embed/pn_YgUMv8P4"
+      videoUrl="https://www.youtube.com/embed/LoS7STMN6Qc"
       thumbnailUrl="https://img.youtube.com/vi/pn_YgUMv8P4/hqdefault.jpg"
       timestamps={[
         { seconds: 0, thumbnail: '/images/timestamps/demo-reel-new-01.jpg' },
